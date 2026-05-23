@@ -44,16 +44,27 @@ pub fn stats(input: &Path) -> Result<VcfStats> {
         let ref_allele = fields[3];
         let alt_field = fields[4];
 
-        for alt in alt_field.split(',') {
-            if alt == "." || alt == "*" {
-                continue;
-            }
-            s.total += 1;
-            let rlen = ref_allele.len();
-            let alen = alt.len();
+        // Skip monomorphic / spanning-deletion records.
+        let alts: Vec<&str> = alt_field
+            .split(',')
+            .filter(|a| *a != "." && *a != "*")
+            .collect();
+        if alts.is_empty() {
+            continue;
+        }
+        s.total += 1;
 
+        // Classify per record: a record increments each counter at most once,
+        // but a multiallelic record can be both SNP and indel (bcftools semantics).
+        let rlen = ref_allele.len();
+        let mut has_snp = false;
+        let mut has_ins = false;
+        let mut has_del = false;
+        let mut has_mnp = false;
+        for alt in &alts {
+            let alen = alt.len();
             if rlen == 1 && alen == 1 {
-                s.snps += 1;
+                has_snp = true;
                 let rb = ref_allele.as_bytes()[0].to_ascii_uppercase();
                 let ab = alt.as_bytes()[0].to_ascii_uppercase();
                 if is_transition(rb, ab) {
@@ -62,12 +73,24 @@ pub fn stats(input: &Path) -> Result<VcfStats> {
                     s.transversions += 1;
                 }
             } else if rlen > alen {
-                s.deletions += 1;
+                has_del = true;
             } else if alen > rlen {
-                s.insertions += 1;
+                has_ins = true;
             } else {
-                s.mnps += 1;
+                has_mnp = true;
             }
+        }
+        if has_snp {
+            s.snps += 1;
+        }
+        if has_ins {
+            s.insertions += 1;
+        }
+        if has_del {
+            s.deletions += 1;
+        }
+        if has_mnp {
+            s.mnps += 1;
         }
     }
 

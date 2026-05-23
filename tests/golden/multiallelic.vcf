@@ -1,0 +1,16 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
+##contig=<ID=chr1,length=1000000>
+##contig=<ID=chr2,length=500000>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	100	.	A	G,T	60	PASS	DP=30
+chr1	200	.	C	T	40	PASS	DP=20
+chr1	300	.	G	GATATAT	80	PASS	DP=50
+chr1	400	.	ATCG	A	30	PASS	DP=8
+chr1	500	.	T	C	90	PASS	DP=60
+chr1	600	.	A	G,T,C	25	PASS	DP=5
+chr2	100	.	T	A	50	PASS	DP=25
+chr2	200	.	C	G	70	PASS	DP=40
+chr2	300	.	GCC	G	20	PASS	DP=6

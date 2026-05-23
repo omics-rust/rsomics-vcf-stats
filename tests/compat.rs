@@ -77,6 +77,45 @@ fn counts_match_bcftools() {
     );
 }
 
+// Multiallelic sites must be counted per-record, not per-allele.
+// Without this test the original bug (counting each alt separately) is hidden
+// because the small.vcf fixture has no multiallelic records.
+#[test]
+fn multiallelic_counts_match_bcftools() {
+    if !bcftools_available() {
+        eprintln!("skipping: bcftools not found");
+        return;
+    }
+    let vcf = fixture("multiallelic.vcf");
+    let ours_out =
+        String::from_utf8(Command::new(ours()).arg(&vcf).output().unwrap().stdout).unwrap();
+    let bcf_out = String::from_utf8(
+        Command::new("bcftools")
+            .arg("stats")
+            .arg(&vcf)
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .unwrap();
+
+    assert_eq!(
+        ours_count(&ours_out, "Total variants:"),
+        bcftools_sn(&bcf_out, "number of records:"),
+        "multiallelic: total record count must be per-record not per-allele"
+    );
+    assert_eq!(
+        ours_count(&ours_out, "SNPs:"),
+        bcftools_sn(&bcf_out, "number of SNPs:"),
+        "multiallelic: SNP count"
+    );
+    assert_eq!(
+        ours_count(&ours_out, "Insertions:") + ours_count(&ours_out, "Deletions:"),
+        bcftools_sn(&bcf_out, "number of indels:"),
+        "multiallelic: indel count"
+    );
+}
+
 #[test]
 fn runs_with_fixture() {
     let out = Command::new(ours())
